@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertCircle, Bell, CalendarDays, Check, CheckCircle2, Clock, Edit3, Home, ListChecks, LoaderCircle, Plus, ShoppingCart, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { cn, formatPercent } from "@/lib/utils";
 import type { AttentionPoint, HomeRecord, Mission, ShoppingItem, Task, WorkspaceData } from "@/lib/duonest/types";
 import type { DuoNestView } from "./duonest-app";
@@ -98,7 +99,7 @@ function Dashboard({ data, run }: { data: WorkspaceData; run: (action: Promise<A
   return <div className="grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
     <div className="space-y-5">
       <section className="overflow-hidden rounded-lg bg-neutral-950 p-5 text-white shadow-sm sm:p-6 dark:border dark:border-neutral-800">
-        <p className="text-sm text-emerald-300">Nível da casa {data.home.level}</p><div className="mt-2 flex items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">{data.home.xp.toLocaleString("pt-BR")} XP</h2><p className="mt-1 text-sm text-neutral-400">A rotina cresce com a colaboração.</p></div><span className="text-sm text-neutral-400">Meta {nextXp.toLocaleString("pt-BR")}</span></div><Progress value={formatPercent(data.home.xp, nextXp)} className="mt-4 bg-white/15" />
+        <div className="flex items-start justify-between gap-4"><div><p className="text-sm text-emerald-300">Nível da casa {data.home.level}</p><h2 className="mt-2 text-3xl font-semibold">{data.home.xp.toLocaleString("pt-BR")} XP</h2><p className="mt-1 text-sm text-neutral-400">A rotina cresce com a colaboração.</p></div><BrandLogo size={76} className="shadow-lg ring-1 ring-white/20" /></div><div className="mt-4 flex justify-end"><span className="text-sm text-neutral-400">Meta {nextXp.toLocaleString("pt-BR")}</span></div><Progress value={formatPercent(data.home.xp, nextXp)} className="mt-2 bg-white/15" />
         <div className="mt-5 grid grid-cols-3 gap-2"><Metric label="Concluídas" value={doneTasks} /><Metric label="Pendentes" value={openTasks.length} /><Metric label="Mercado" value={pendingItems.length} /></div>
       </section>
       <Surface><SectionTitle icon={ListChecks} title="Próximas tarefas" href="/tarefas" /><div className="mt-3 space-y-2">{openTasks.slice(0, 5).map((task) => <TaskRow key={task.id} task={task} data={data} toggle={() => run(toggleTask(task.id, true))} />)}{!openTasks.length ? <Empty icon={CheckCircle2} title="Tudo em dia" text="Novas tarefas aparecerão aqui." /> : null}</div></Surface>
