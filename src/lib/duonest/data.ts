@@ -29,30 +29,81 @@ function ensureNoError(results: Array<{ error: { message: string } | null }>) {
   if (failed?.error) throw new Error(failed.error.message);
 }
 
-export const getWorkspaceData = cache(async (): Promise<WorkspaceData> => {
+export const getShellData = cache(async () => {
+  const context = await getCurrentContext();
+  if (!context.profile || !context.home || !context.role) redirect("/onboarding");
+
+  const { count, error } = await context.supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", context.userId)
+    .is("read_at", null);
+
+  if (error) throw new Error(error.message);
+
+  return {
+    profile: context.profile,
+    home: context.home,
+    role: context.role,
+    unreadCount: count ?? 0,
+  };
+});
+
+export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceData> => {
   const context = await getCurrentContext();
   if (!context.profile || !context.home || !context.role) redirect("/onboarding");
   const { supabase, userId, home, profile, role } = context;
 
+  const needsTasks = ["dashboard", "tarefas", "calendario"].includes(view);
+  const needsMissions = ["dashboard", "missoes", "calendario"].includes(view);
+  const needsMissionCompletions = ["dashboard", "missoes"].includes(view);
+  const needsShoppingLists = view === "mercado";
+  const needsShoppingItems = ["dashboard", "mercado"].includes(view);
+  const needsMembers = ["dashboard", "tarefas", "pontos", "membros"].includes(view);
+  const skip = () => Promise.resolve({ data: [], error: null });
+
   const results = await Promise.all([
-    supabase.from("tasks").select("*").eq("home_id", home.id).order("status").order("due_at", { ascending: true, nullsFirst: false }),
-    supabase.from("task_completions").select("task_id").eq("home_id", home.id),
-    supabase.from("missions").select("*").eq("home_id", home.id).order("due_at", { ascending: true, nullsFirst: false }),
-    supabase.from("mission_completions").select("mission_id").eq("home_id", home.id),
-    supabase.from("shopping_lists").select("id,name,store_name,completed_at").eq("home_id", home.id).order("created_at", { ascending: false }),
-    supabase.from("shopping_items").select("id,list_id,product,quantity,category,notes,bought,bought_by,bought_at").eq("home_id", home.id).order("bought").order("created_at"),
-    supabase.from("attention_points").select("*").eq("home_id", home.id).order("status").order("created_at", { ascending: false }),
-    supabase.from("home_records").select("*").eq("home_id", home.id).order("record_date", { ascending: false }),
-    supabase.from("activity_log").select("*").eq("home_id", home.id).order("created_at", { ascending: false }).limit(20),
-    supabase.from("achievements").select("*").order("threshold"),
-    supabase.from("user_achievements").select("achievement_id").eq("home_id", home.id).eq("user_id", userId),
-    supabase.from("home_members").select("id,user_id,role,joined_at").eq("home_id", home.id).order("joined_at"),
-    supabase.from("home_invites").select("id,code,email,status,expires_at,created_at").eq("home_id", home.id).order("created_at", { ascending: false }),
-    supabase.from("notifications").select("id,title,body,type,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30),
+    needsTasks
+      ? supabase.from("tasks").select("*").eq("home_id", home.id).order("status").order("due_at", { ascending: true, nullsFirst: false })
+      : skip(),
+    needsMissions
+      ? supabase.from("missions").select("*").eq("home_id", home.id).order("due_at", { ascending: true, nullsFirst: false })
+      : skip(),
+    needsMissionCompletions
+      ? supabase.from("mission_completions").select("mission_id").eq("home_id", home.id)
+      : skip(),
+    needsShoppingLists
+      ? supabase.from("shopping_lists").select("id,name,store_name,completed_at").eq("home_id", home.id).order("created_at", { ascending: false })
+      : skip(),
+    needsShoppingItems
+      ? supabase.from("shopping_items").select("id,list_id,product,quantity,category,notes,bought,bought_by,bought_at").eq("home_id", home.id).order("bought").order("created_at")
+      : skip(),
+    view === "pontos"
+      ? supabase.from("attention_points").select("*").eq("home_id", home.id).order("status").order("created_at", { ascending: false })
+      : skip(),
+    view === "registros"
+      ? supabase.from("home_records").select("*").eq("home_id", home.id).order("record_date", { ascending: false })
+      : skip(),
+    view === "dashboard"
+      ? supabase.from("activity_log").select("*").eq("home_id", home.id).order("created_at", { ascending: false }).limit(20)
+      : skip(),
+    view === "conquistas" ? supabase.from("achievements").select("*").order("threshold") : skip(),
+    view === "conquistas"
+      ? supabase.from("user_achievements").select("achievement_id").eq("home_id", home.id).eq("user_id", userId)
+      : skip(),
+    needsMembers
+      ? supabase.from("home_members").select("id,user_id,role,joined_at").eq("home_id", home.id).order("joined_at")
+      : skip(),
+    view === "membros"
+      ? supabase.from("home_invites").select("id,code,email,status,expires_at,created_at").eq("home_id", home.id).order("created_at", { ascending: false })
+      : skip(),
+    view === "notificacoes"
+      ? supabase.from("notifications").select("id,title,body,type,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30)
+      : skip(),
   ]);
   ensureNoError(results);
 
-  const memberRows = results[11].data ?? [];
+  const memberRows = results[10].data ?? [];
   const memberIds = memberRows.map((member) => member.user_id);
   const { data: memberProfiles, error: memberProfilesError } = memberIds.length
     ? await supabase.from("profiles").select("*").in("id", memberIds)
@@ -71,17 +122,17 @@ export const getWorkspaceData = cache(async (): Promise<WorkspaceData> => {
     role,
     members,
     tasks: results[0].data ?? [],
-    taskCompletionIds: (results[1].data ?? []).map((item) => item.task_id),
-    missions: results[2].data ?? [],
-    missionCompletionIds: (results[3].data ?? []).map((item) => item.mission_id),
-    shoppingLists: results[4].data ?? [],
-    shoppingItems: results[5].data ?? [],
-    attentionPoints: results[6].data ?? [],
-    records: results[7].data ?? [],
-    activities: results[8].data ?? [],
-    achievements: results[9].data ?? [],
-    unlockedAchievementIds: (results[10].data ?? []).map((item) => item.achievement_id),
-    invites: results[12].data ?? [],
-    notifications: results[13].data ?? [],
+    taskCompletionIds: [],
+    missions: results[1].data ?? [],
+    missionCompletionIds: (results[2].data ?? []).map((item) => item.mission_id),
+    shoppingLists: results[3].data ?? [],
+    shoppingItems: results[4].data ?? [],
+    attentionPoints: results[5].data ?? [],
+    records: results[6].data ?? [],
+    activities: results[7].data ?? [],
+    achievements: results[8].data ?? [],
+    unlockedAchievementIds: (results[9].data ?? []).map((item) => item.achievement_id),
+    invites: results[11].data ?? [],
+    notifications: results[12].data ?? [],
   } as WorkspaceData;
 });

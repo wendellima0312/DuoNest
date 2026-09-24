@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, CheckSquare, ChevronRight, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, CalendarDays, CheckSquare, ChevronRight, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
 import { ThemeToggle } from "./theme-toggle";
@@ -22,7 +23,7 @@ const navigation = [
 
 const bottomNavigation = navigation.slice(0, 4);
 
-export function AppShell({ children, userName, homeName, unreadCount }: { children: React.ReactNode; userName: string; homeName: string; unreadCount: number }) {
+export function AppShell({ children, userName, userAvatar, homeName, unreadCount }: { children: React.ReactNode; userName: string; userAvatar: string | null; homeName: string; unreadCount: number }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -39,7 +40,7 @@ export function AppShell({ children, userName, homeName, unreadCount }: { childr
         })}
       </nav>
       <div className="mt-auto border-t border-slate-200 p-3 dark:border-neutral-800">
-        <Link href="/perfil" onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-slate-100 dark:hover:bg-neutral-800"><UserRound size={18} /><span className="min-w-0 flex-1 truncate">{userName}</span></Link>
+        <Link href="/perfil" onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-slate-100 dark:hover:bg-neutral-800"><Avatar name={userName} src={userAvatar} size={28} /><span className="min-w-0 flex-1 truncate">{userName}</span></Link>
         <Link href="/configuracoes" onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-slate-100 dark:hover:bg-neutral-800"><Settings size={18} />Configurações</Link>
         <form action={signOut}><button className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"><LogOut size={18} />Sair</button></form>
       </div>
