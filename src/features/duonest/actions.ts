@@ -20,6 +20,14 @@ function isoDate(formData: FormData, key: string) {
   return result ? new Date(result).toISOString() : null;
 }
 
+function taskDueAt(formData: FormData, recurrence: string) {
+  const dueAt = isoDate(formData, "dueAt");
+  if (dueAt || recurrence === "none" || recurrence === "custom") return dueAt;
+  const nextCycle = new Date();
+  nextCycle.setDate(nextCycle.getDate() + 1);
+  return nextCycle.toISOString();
+}
+
 function refresh() {
   revalidatePath("/", "layout");
 }
@@ -47,6 +55,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
   if (!context) return failure("Sessão ou casa não encontrada.");
   const title = text(formData, "title");
   if (!title) return failure("Informe o título da tarefa.");
+  const recurrence = text(formData, "recurrence") || "none";
   const { error } = await context.supabase.from("tasks").insert({
     home_id: context.homeId,
     title,
@@ -55,8 +64,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     assigned_to: optional(formData, "assignedTo"),
     assignment: text(formData, "assignment") || "both",
     priority: text(formData, "priority") || "normal",
-    due_at: isoDate(formData, "dueAt"),
-    recurrence: text(formData, "recurrence") || "none",
+    due_at: taskDueAt(formData, recurrence),
+    recurrence,
     xp: Math.max(0, Number(text(formData, "xp")) || 10),
     created_by: context.userId,
   });
@@ -69,6 +78,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   const id = text(formData, "id");
   const title = text(formData, "title");
   if (!id || !title) return failure("Tarefa inválida.");
+  const recurrence = text(formData, "recurrence") || "none";
   const { error } = await context.supabase.from("tasks").update({
     title,
     description: optional(formData, "description"),
@@ -76,8 +86,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     assigned_to: optional(formData, "assignedTo"),
     assignment: text(formData, "assignment") || "both",
     priority: text(formData, "priority") || "normal",
-    due_at: isoDate(formData, "dueAt"),
-    recurrence: text(formData, "recurrence") || "none",
+    due_at: taskDueAt(formData, recurrence),
+    recurrence,
     xp: Math.max(0, Number(text(formData, "xp")) || 10),
   }).eq("id", id).eq("home_id", context.homeId);
   return error ? failure(error.message) : success("Tarefa atualizada.");
