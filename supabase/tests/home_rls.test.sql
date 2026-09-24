@@ -8,12 +8,6 @@ values
   ('22222222-2222-2222-2222-222222222222', 'member@example.com'),
   ('33333333-3333-3333-3333-333333333333', 'stranger@example.com');
 
-insert into public.profiles (id, display_name, email)
-values
-  ('11111111-1111-1111-1111-111111111111', 'Owner', 'owner@example.com'),
-  ('22222222-2222-2222-2222-222222222222', 'Member', 'member@example.com'),
-  ('33333333-3333-3333-3333-333333333333', 'Stranger', 'stranger@example.com');
-
 insert into public.homes (id, name, created_by)
 values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Casa A', '11111111-1111-1111-1111-111111111111');
 

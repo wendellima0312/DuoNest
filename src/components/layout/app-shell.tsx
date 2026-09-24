@@ -1,135 +1,66 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell,
-  CalendarDays,
-  CheckSquare,
-  ClipboardList,
-  Home,
-  Medal,
-  Menu,
-  Plus,
-  Settings,
-  ShoppingCart,
-  Sparkles,
-  User,
-  Wrench,
-} from "lucide-react";
+import { Bell, CalendarDays, CheckSquare, ChevronRight, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/features/auth/actions";
+import { ThemeToggle } from "./theme-toggle";
 
-const primaryNav = [
-  { href: "/dashboard", label: "Visao Geral", icon: Home },
+const navigation = [
+  { href: "/dashboard", label: "Visão geral", icon: Home },
   { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
-  { href: "/calendario", label: "Calendario", icon: CalendarDays },
-  { href: "/missoes", label: "Missoes", icon: Sparkles },
+  { href: "/calendario", label: "Calendário", icon: CalendarDays },
+  { href: "/missoes", label: "Missões", icon: Sparkles },
   { href: "/mercado", label: "Mercado", icon: ShoppingCart },
-  { href: "/pontos-atencao", label: "Pontos de atencao", icon: Wrench },
-  { href: "/registros", label: "Registros", icon: ClipboardList },
-  { href: "/conquistas", label: "Conquistas", icon: Medal },
+  { href: "/pontos-atencao", label: "Pontos de atenção", icon: Bell },
+  { href: "/registros", label: "Registros", icon: ChevronRight },
+  { href: "/conquistas", label: "Conquistas", icon: Sparkles },
 ];
 
-const bottomNav = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
-  { href: "/mercado", label: "Mercado", icon: ShoppingCart },
-  { href: "/perfil", label: "Perfil", icon: User },
-];
+const bottomNavigation = navigation.slice(0, 4);
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, userName, homeName, unreadCount }: { children: React.ReactNode; userName: string; homeName: string; unreadCount: number }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const nav = (
+    <>
+      <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5 dark:border-neutral-800">
+        <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setMenuOpen(false)}><span className="grid size-9 place-items-center rounded-lg bg-emerald-700 text-white"><Home size={18} /></span><span><strong className="block">DuoNest</strong><small className="block max-w-36 truncate text-slate-500 dark:text-neutral-400">{homeName}</small></span></Link>
+        <button className="grid size-10 place-items-center lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X size={22} /></button>
+      </div>
+      <nav className="space-y-1 overflow-y-auto px-3 py-4">
+        {navigation.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={cn("flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-800", active && "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300")}><item.icon size={18} />{item.label}</Link>;
+        })}
+      </nav>
+      <div className="mt-auto border-t border-slate-200 p-3 dark:border-neutral-800">
+        <Link href="/perfil" onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-slate-100 dark:hover:bg-neutral-800"><UserRound size={18} /><span className="min-w-0 flex-1 truncate">{userName}</span></Link>
+        <Link href="/configuracoes" onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-slate-100 dark:hover:bg-neutral-800"><Settings size={18} />Configurações</Link>
+        <form action={signOut}><button className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"><LogOut size={18} />Sair</button></form>
+      </div>
+    </>
+  );
 
   return (
-    <div className="min-h-screen bg-[#f6f4ef] text-slate-950">
-      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-white/90 px-5 py-6 backdrop-blur lg:block">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-emerald-700 text-white">
-            <Home size={20} />
-          </div>
-          <div>
-            <p className="text-lg font-semibold">DuoNest</p>
-            <p className="text-xs text-slate-500">Nosso Cantinho</p>
-          </div>
-        </Link>
-
-        <nav className="mt-9 space-y-1">
-          {primaryNav.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition",
-                  active && "bg-emerald-50 text-emerald-800",
-                  !active && "hover:bg-slate-100 hover:text-slate-950",
-                )}
-              >
-                <item.icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <Link
-          href="/configuracoes"
-          className={cn(
-            "absolute bottom-6 left-5 right-5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100",
-            pathname.startsWith("/configuracoes") && "bg-emerald-50 text-emerald-800",
-          )}
-        >
-          <Settings size={18} />
-          Configuracoes
-        </Link>
-      </aside>
-
+    <div className="min-h-screen bg-stone-100 text-slate-950 dark:bg-neutral-950 dark:text-neutral-100">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-slate-200 bg-white lg:flex dark:border-neutral-800 dark:bg-neutral-900">{nav}</aside>
+      {menuOpen ? <div className="fixed inset-0 z-40 lg:hidden"><button className="absolute inset-0 bg-black/45" onClick={() => setMenuOpen(false)} aria-label="Fechar menu" /><aside className="relative flex h-full w-[min(86vw,320px)] flex-col bg-white shadow-xl dark:bg-neutral-900">{nav}</aside></div> : null}
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f6f4ef]/90 px-4 py-3 backdrop-blur lg:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <div className="flex items-center gap-3 lg:hidden">
-              <Menu size={22} />
-              <span className="font-semibold">DuoNest</span>
-            </div>
-            <div className="hidden lg:block">
-              <p className="text-sm text-slate-500">Rotina compartilhada</p>
-              <p className="font-semibold">Boa tarde, Wendel.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="relative grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm" aria-label="Notificacoes">
-                <Bell size={18} />
-                <span className="absolute right-1 top-1 size-2.5 rounded-full bg-emerald-600" />
-              </button>
-              <button className="hidden items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 sm:flex">
-                <Plus size={17} />
-                Adicionar
-              </button>
-            </div>
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-stone-100/90 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3"><button className="grid size-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white lg:hidden dark:border-neutral-700 dark:bg-neutral-900" onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Menu size={21} /></button><div className="min-w-0"><p className="truncate text-sm text-slate-500 dark:text-neutral-400">{homeName}</p><p className="truncate font-semibold">Olá, {userName}.</p></div></div>
+            <div className="flex items-center gap-2"><ThemeToggle /><Link href="/configuracoes/notificacoes" className="relative grid size-10 place-items-center rounded-lg border border-slate-200 bg-white dark:border-neutral-700 dark:bg-neutral-900" aria-label="Notificações"><Bell size={18} />{unreadCount ? <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">{unreadCount}</span> : null}</Link><Link href="/tarefas?novo=1" className="hidden h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 sm:flex"><Plus size={17} />Nova tarefa</Link></div>
           </div>
         </header>
-
         <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 lg:px-8 lg:pb-10">{children}</main>
       </div>
-
-      <button className="fixed bottom-7 left-1/2 z-30 grid size-14 -translate-x-1/2 place-items-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-900/20 lg:hidden" aria-label="Adicionar">
-        <Plus size={26} />
-      </button>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-20 grid grid-cols-4 border-t border-slate-200 bg-white px-2 pb-3 pt-2 lg:hidden">
-        {bottomNav.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn("flex flex-col items-center gap-1 rounded-lg py-1.5 text-[11px] font-medium text-slate-500", active && "text-emerald-800")}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </Link>
-          );
-        })}
+      <Link href="/tarefas?novo=1" className="fixed bottom-20 right-4 z-30 grid size-14 place-items-center rounded-full bg-emerald-700 text-white shadow-lg lg:hidden" aria-label="Nova tarefa"><Plus size={25} /></Link>
+      <nav className="fixed bottom-0 left-0 right-0 z-20 grid grid-cols-4 border-t border-slate-200 bg-white px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden dark:border-neutral-800 dark:bg-neutral-900">
+        {bottomNavigation.map((item) => { const active = pathname === item.href || pathname.startsWith(`${item.href}/`); return <Link key={item.href} href={item.href} className={cn("flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium text-slate-500 dark:text-neutral-400", active && "text-emerald-700 dark:text-emerald-400")}><item.icon size={20} />{item.label}</Link>; })}
       </nav>
     </div>
   );

@@ -1,5 +1,6 @@
 import { DuoNestApp } from "@/features/duonest/duonest-app";
 
-export default function TasksPage() {
-  return <DuoNestApp view="tarefas" />;
+export default async function TasksPage({ searchParams }: { searchParams: Promise<{ novo?: string }> }) {
+  const params = await searchParams;
+  return <DuoNestApp view="tarefas" initialOpen={params.novo === "1"} />;
 }
