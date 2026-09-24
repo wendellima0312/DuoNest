@@ -1,0 +1,16 @@
+{
+  "name": "DuoNest",
+  "short_name": "DuoNest",
+  "description": "Gerenciador inteligente e gamificado de rotina domestica.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#047857",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
