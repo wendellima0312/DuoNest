@@ -25,7 +25,7 @@ Required environment variables:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
 Never put service-role or secret keys in `NEXT_PUBLIC_` variables.
@@ -74,7 +74,7 @@ supabase test db
 
 1. Push this repository to GitHub.
 2. Import the repository in Vercel.
-3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 4. Run the Supabase migration before using the production app.
 5. Keep secret/server keys only in server-side environment variables.
 
