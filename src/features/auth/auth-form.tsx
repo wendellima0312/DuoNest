@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { Home, LoaderCircle, LockKeyhole, Mail, UserPlus } from "lucide-react";
+import { LoaderCircle, LockKeyhole, Mail, UserPlus } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import {
   requestPasswordReset,
   signIn,
@@ -32,7 +33,7 @@ export function AuthForm({ mode, next = "/dashboard" }: { mode: Mode; next?: str
     <main className="grid min-h-screen place-items-center bg-stone-100 px-4 py-8 dark:bg-neutral-950">
       <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         <Link href="/" className="mb-8 flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-lg bg-emerald-700 text-white"><Home size={20} /></span>
+          <BrandLogo size={44} />
           <span><strong className="block text-lg">DuoNest</strong><small className="text-slate-500 dark:text-neutral-400">Rotina doméstica compartilhada</small></span>
         </Link>
         <Icon className="mb-3 text-emerald-700 dark:text-emerald-400" size={24} />

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Check, Home, KeyRound, LoaderCircle, Users } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { createHome, joinHome, type ActionResult } from "./actions";
 
 const routines = ["Limpeza", "Mercado", "Organização", "Pets", "Financeiro", "Manutenção"];
@@ -21,7 +22,7 @@ export function OnboardingForm({ initialName }: { initialName: string }) {
     <main className="min-h-screen bg-stone-100 px-4 py-8 dark:bg-neutral-950">
       <section className="mx-auto max-w-3xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-lg bg-emerald-700 text-white"><Home size={22} /></span>
+          <BrandLogo size={48} />
           <div><h1 className="text-2xl font-semibold">Configure sua casa</h1><p className="text-sm text-slate-500 dark:text-neutral-400">Crie um espaço ou use o convite recebido.</p></div>
         </div>
         <div className="mt-7 grid grid-cols-2 rounded-lg bg-slate-100 p-1 dark:bg-neutral-800" role="tablist" aria-label="Modo de entrada">

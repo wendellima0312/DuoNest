@@ -14,12 +14,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DuoNest",
+  applicationName: "DuoNest",
   description: "Gerenciador inteligente e gamificado de rotina domestica para casas compartilhadas.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#047857",
+  themeColor: "#071b4a",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

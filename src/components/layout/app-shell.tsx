@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, CalendarDays, CheckSquare, ChevronRight, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, UserRound, X } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
 import { ThemeToggle } from "./theme-toggle";
@@ -28,7 +29,7 @@ export function AppShell({ children, userName, homeName, unreadCount }: { childr
   const nav = (
     <>
       <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5 dark:border-neutral-800">
-        <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setMenuOpen(false)}><span className="grid size-9 place-items-center rounded-lg bg-emerald-700 text-white"><Home size={18} /></span><span><strong className="block">DuoNest</strong><small className="block max-w-36 truncate text-slate-500 dark:text-neutral-400">{homeName}</small></span></Link>
+        <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setMenuOpen(false)}><BrandLogo size={40} /><span><strong className="block">DuoNest</strong><small className="block max-w-36 truncate text-slate-500 dark:text-neutral-400">{homeName}</small></span></Link>
         <button className="grid size-10 place-items-center lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X size={22} /></button>
       </div>
       <nav className="space-y-1 overflow-y-auto px-3 py-4">
