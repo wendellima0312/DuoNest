@@ -1,11 +1,12 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(15);
 
 insert into auth.users (id, email, raw_user_meta_data)
 values
   ('44444444-4444-4444-4444-444444444444', 'workflow-owner@example.com', '{"display_name":"Workflow Owner"}'::jsonb),
-  ('55555555-5555-5555-5555-555555555555', 'workflow-member@example.com', '{"display_name":"Workflow Member"}'::jsonb);
+  ('55555555-5555-5555-5555-555555555555', 'workflow-member@example.com', '{"display_name":"Workflow Member"}'::jsonb),
+  ('66666666-6666-6666-6666-666666666666', 'new-owner@example.com', '{"display_name":"New Owner"}'::jsonb);
 
 select results_eq(
   $$select display_name from public.profiles where id = '44444444-4444-4444-4444-444444444444'$$,
@@ -29,7 +30,34 @@ insert into public.missions (id, home_id, name, xp, created_by)
 values ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Workflow mission', 50, '44444444-4444-4444-4444-444444444444');
 
 set local role authenticated;
+set local request.jwt.claim.sub = '66666666-6666-6666-6666-666666666666';
+set local request.jwt.claim.email = 'new-owner@example.com';
+
+select lives_ok(
+  $$select public.create_home('New User Home', 'New Owner', array['Limpeza', 'Compras'])$$,
+  'authenticated user creates a home through the RPC'
+);
+
+select results_eq(
+  $$select role::text from public.home_members where user_id = '66666666-6666-6666-6666-666666666666'$$,
+  array['owner'],
+  'home RPC creates the owner membership'
+);
+
+select results_eq(
+  $$select count(*)::integer from public.shopping_lists where created_by = '66666666-6666-6666-6666-666666666666'$$,
+  array[1],
+  'home RPC creates the default shopping list'
+);
+
+select results_eq(
+  $$select count(*)::integer from public.tasks where created_by = '66666666-6666-6666-6666-666666666666'$$,
+  array[2],
+  'home RPC creates selected routines'
+);
+
 set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+set local request.jwt.claim.email = 'workflow-owner@example.com';
 
 update public.tasks set status = 'resolved' where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
 

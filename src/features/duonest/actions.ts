@@ -307,20 +307,17 @@ export async function createHome(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
-  const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
   if (typeof userId !== "string") return failure("Sessão expirada.");
   const displayName = text(formData, "displayName");
   const homeName = text(formData, "homeName");
   if (displayName.length < 2 || homeName.length < 2) return failure("Preencha seu nome e o nome da casa.");
-  const { error: profileError } = await supabase.from("profiles").upsert({ id: userId, display_name: displayName, email }, { onConflict: "id" });
-  if (profileError) return failure(profileError.message);
-  const { data: home, error: homeError } = await supabase.from("homes").insert({ name: homeName, created_by: userId }).select("id").single();
-  if (homeError) return failure(homeError.message);
-  await supabase.from("shopping_lists").insert({ home_id: home.id, name: "Lista principal", created_by: userId });
   const routines = formData.getAll("routines").map(String);
-  if (routines.length) {
-    await supabase.from("tasks").insert(routines.map((routine) => ({ home_id: home.id, title: routine, category: routine, assignment: "both", recurrence: "weekly", xp: 20, created_by: userId })));
-  }
+  const { error } = await supabase.rpc("create_home", {
+    home_name: homeName,
+    display_name: displayName,
+    routine_names: routines,
+  });
+  if (error) return failure(error.code === "23505" ? "Você já participa de uma casa." : "Não foi possível criar a casa. Tente novamente.");
   refresh();
   redirect("/dashboard");
 }
