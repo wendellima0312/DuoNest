@@ -17,7 +17,14 @@ function optional(formData: FormData, key: string) {
 
 function isoDate(formData: FormData, key: string) {
   const result = text(formData, key);
-  return result ? new Date(result).toISOString() : null;
+  if (!result) return null;
+  if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(result)) return new Date(result).toISOString();
+
+  const [datePart, timePart = "00:00"] = result.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute, second = 0] = timePart.split(":").map(Number);
+  const timezoneOffset = Number(text(formData, "timezoneOffset")) || 0;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second) + timezoneOffset * 60_000).toISOString();
 }
 
 function taskDueAt(formData: FormData, recurrence: string) {
