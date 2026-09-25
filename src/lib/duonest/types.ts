@@ -47,16 +47,32 @@ export type Task = {
   created_at: string;
 };
 
+export type TaskCompletion = {
+  id: string;
+  task_id: string;
+  completed_by: string;
+  xp_awarded: number;
+  completed_at: string;
+};
+
 export type Mission = {
   id: string;
   name: string;
   description: string | null;
   mission_type: "daily" | "weekly" | "special" | "custom";
+  assigned_to: string | null;
   assignment: "self" | "partner" | "both" | "home";
   frequency: string;
   due_at: string | null;
   xp: number;
   created_by: string;
+  is_system_generated: boolean;
+  goal_type: "task_count" | "category_tasks" | "shopping_items" | "attention_points" | null;
+  goal_category: string | null;
+  target_count: number | null;
+  progress_count: number;
+  period_start: string | null;
+  source_key: string | null;
 };
 
 export type ShoppingList = { id: string; name: string; store_name: string | null; completed_at: string | null };
@@ -67,6 +83,8 @@ export type Activity = { id: string; actor_id: string | null; action: string; en
 export type Achievement = { id: string; code: string; name: string; description: string; threshold: number | null; icon: string | null };
 export type Invite = { id: string; code: string; email: string | null; status: string; expires_at: string; created_at: string };
 export type Notification = { id: string; title: string; body: string | null; type: string; read_at: string | null; created_at: string };
+export type HouseholdExpense = { id: string; description: string; category: string; amount: number; expense_date: string; status: "pending" | "paid"; paid_by: string | null; notes: string | null; created_by: string; created_at: string };
+export type HouseholdPlan = { id: string; title: string; description: string | null; plan_type: "purchase" | "improvement" | "maintenance" | "other"; status: "planned" | "in_progress" | "completed" | "cancelled"; target_date: string | null; estimated_cost: number | null; responsible_id: string | null; created_by: string; created_at: string };
 
 export type WorkspaceData = {
   userId: string;
@@ -75,6 +93,7 @@ export type WorkspaceData = {
   role: "owner" | "member";
   members: Member[];
   tasks: Task[];
+  taskCompletions: TaskCompletion[];
   taskCompletionIds: string[];
   missions: Mission[];
   missionCompletionIds: string[];
@@ -87,4 +106,6 @@ export type WorkspaceData = {
   unlockedAchievementIds: string[];
   invites: Invite[];
   notifications: Notification[];
+  expenses: HouseholdExpense[];
+  plans: HouseholdPlan[];
 };

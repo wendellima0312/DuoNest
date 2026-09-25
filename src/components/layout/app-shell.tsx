@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, CheckSquare, ChevronRight, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Bell, CalendarDays, CheckSquare, ChevronRight, ClipboardList, History, Home, LogOut, Menu, Plus, Settings, ShoppingCart, Sparkles, WalletCards, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
 import { ThemeToggle } from "./theme-toggle";
+import { BrowserNotificationListener } from "@/features/duonest/browser-notifications";
 
 const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: Home },
@@ -16,6 +17,9 @@ const navigation = [
   { href: "/calendario", label: "Calendário", icon: CalendarDays },
   { href: "/missoes", label: "Missões", icon: Sparkles },
   { href: "/mercado", label: "Mercado", icon: ShoppingCart },
+  { href: "/financeiro", label: "Financeiro", icon: WalletCards },
+  { href: "/planejamentos", label: "Planejamentos", icon: ClipboardList },
+  { href: "/historico", label: "Histórico", icon: History },
   { href: "/pontos-atencao", label: "Pontos de atenção", icon: Bell },
   { href: "/registros", label: "Registros", icon: ChevronRight },
   { href: "/conquistas", label: "Conquistas", icon: Sparkles },
@@ -23,7 +27,7 @@ const navigation = [
 
 const bottomNavigation = navigation.slice(0, 4);
 
-export function AppShell({ children, userName, userAvatar, homeName, unreadCount }: { children: React.ReactNode; userName: string; userAvatar: string | null; homeName: string; unreadCount: number }) {
+export function AppShell({ children, userId, userName, userAvatar, homeName, unreadCount }: { children: React.ReactNode; userId: string; userName: string; userAvatar: string | null; homeName: string; unreadCount: number }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -49,6 +53,7 @@ export function AppShell({ children, userName, userAvatar, homeName, unreadCount
 
   return (
     <div className="min-h-screen bg-stone-100 text-slate-950 dark:bg-neutral-950 dark:text-neutral-100">
+      <BrowserNotificationListener userId={userId} />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-slate-200 bg-white lg:flex dark:border-neutral-800 dark:bg-neutral-900">{nav}</aside>
       {menuOpen ? <div className="fixed inset-0 z-40 lg:hidden"><button className="absolute inset-0 bg-black/45" onClick={() => setMenuOpen(false)} aria-label="Fechar menu" /><aside className="relative flex h-full w-[min(86vw,320px)] flex-col bg-white shadow-xl dark:bg-neutral-900">{nav}</aside></div> : null}
       <div className="lg:pl-72">

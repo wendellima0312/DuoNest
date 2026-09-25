@@ -54,12 +54,12 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
   if (!context.profile || !context.home || !context.role) redirect("/onboarding");
   const { supabase, userId, home, profile, role } = context;
 
-  const needsTasks = ["dashboard", "tarefas", "calendario"].includes(view);
+  const needsTasks = ["dashboard", "tarefas", "calendario", "historico"].includes(view);
   const needsMissions = ["dashboard", "missoes", "calendario"].includes(view);
   const needsMissionCompletions = ["dashboard", "missoes"].includes(view);
   const needsShoppingLists = view === "mercado";
   const needsShoppingItems = ["dashboard", "mercado"].includes(view);
-  const needsMembers = ["dashboard", "tarefas", "pontos", "membros"].includes(view);
+  const needsMembers = ["dashboard", "tarefas", "missoes", "pontos", "membros", "financeiro", "planejamentos", "historico"].includes(view);
   const skip = () => Promise.resolve({ data: [], error: null });
 
   const results = await Promise.all([
@@ -67,7 +67,7 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
       ? supabase.from("tasks").select("*").eq("home_id", home.id).order("status").order("due_at", { ascending: true, nullsFirst: false })
       : skip(),
     needsMissions
-      ? supabase.from("missions").select("*").eq("home_id", home.id).order("due_at", { ascending: true, nullsFirst: false })
+      ? supabase.from("missions").select("*").eq("home_id", home.id).eq("is_system_generated", true).gte("due_at", new Date().toISOString()).order("due_at", { ascending: true, nullsFirst: false })
       : skip(),
     needsMissionCompletions
       ? supabase.from("mission_completions").select("mission_id").eq("home_id", home.id)
@@ -84,8 +84,8 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
     view === "registros"
       ? supabase.from("home_records").select("*").eq("home_id", home.id).order("record_date", { ascending: false })
       : skip(),
-    view === "dashboard"
-      ? supabase.from("activity_log").select("*").eq("home_id", home.id).order("created_at", { ascending: false }).limit(20)
+    ["dashboard", "historico"].includes(view)
+      ? supabase.from("activity_log").select("*").eq("home_id", home.id).order("created_at", { ascending: false }).limit(view === "historico" ? 100 : 20)
       : skip(),
     view === "conquistas" ? supabase.from("achievements").select("*").order("threshold") : skip(),
     view === "conquistas"
@@ -99,6 +99,15 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
       : skip(),
     view === "notificacoes"
       ? supabase.from("notifications").select("id,title,body,type,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30)
+      : skip(),
+    view === "historico"
+      ? supabase.from("task_completions").select("id,task_id,completed_by,xp_awarded,completed_at").eq("home_id", home.id).order("completed_at", { ascending: false })
+      : skip(),
+    view === "financeiro"
+      ? supabase.from("household_expenses").select("*").eq("home_id", home.id).order("expense_date", { ascending: false })
+      : skip(),
+    view === "planejamentos"
+      ? supabase.from("household_plans").select("*").eq("home_id", home.id).order("status").order("target_date", { ascending: true, nullsFirst: false })
       : skip(),
   ]);
   ensureNoError(results);
@@ -122,6 +131,7 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
     role,
     members,
     tasks: results[0].data ?? [],
+    taskCompletions: results[13].data ?? [],
     taskCompletionIds: [],
     missions: results[1].data ?? [],
     missionCompletionIds: (results[2].data ?? []).map((item) => item.mission_id),
@@ -134,5 +144,7 @@ export const getWorkspaceData = cache(async (view: string): Promise<WorkspaceDat
     unlockedAchievementIds: (results[9].data ?? []).map((item) => item.achievement_id),
     invites: results[11].data ?? [],
     notifications: results[12].data ?? [],
+    expenses: results[14].data ?? [],
+    plans: results[15].data ?? [],
   } as WorkspaceData;
 });

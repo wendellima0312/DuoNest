@@ -50,6 +50,13 @@ function success(message: string): ActionResult {
   return { ok: true, message };
 }
 
+function databaseFailure(message: string): ActionResult {
+  if (message.includes("TASK_OVERDUE_EXTEND_REQUIRED")) return failure("O prazo venceu. Quem criou a tarefa precisa prorrogá-la antes da conclusão.");
+  if (message.includes("ONLY_TASK_CREATOR_CAN_EXTEND")) return failure("Somente quem criou a tarefa pode prorrogar este prazo.");
+  if (message.includes("TASK_EXTENSION_MUST_BE_FUTURE")) return failure("Escolha um novo prazo no futuro.");
+  return failure(message);
+}
+
 export async function createTask(formData: FormData): Promise<ActionResult> {
   const context = await requireContext();
   if (!context) return failure("Sessão ou casa não encontrada.");
@@ -90,14 +97,14 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     recurrence,
     xp: Math.max(0, Number(text(formData, "xp")) || 10),
   }).eq("id", id).eq("home_id", context.homeId);
-  return error ? failure(error.message) : success("Tarefa atualizada.");
+  return error ? databaseFailure(error.message) : success("Tarefa atualizada.");
 }
 
 export async function toggleTask(id: string, resolved: boolean): Promise<ActionResult> {
   const context = await requireContext();
   if (!context) return failure("Sessão expirada.");
   const { error } = await context.supabase.from("tasks").update({ status: resolved ? "resolved" : "open" }).eq("id", id).eq("home_id", context.homeId);
-  return error ? failure(error.message) : success(resolved ? "Tarefa concluída e XP registrado." : "Tarefa reaberta.");
+  return error ? databaseFailure(error.message) : success(resolved ? "Tarefa concluída e XP registrado." : "Tarefa reaberta.");
 }
 
 export async function deleteTask(id: string): Promise<ActionResult> {
@@ -105,6 +112,113 @@ export async function deleteTask(id: string): Promise<ActionResult> {
   if (!context) return failure("Sessão expirada.");
   const { error } = await context.supabase.from("tasks").delete().eq("id", id).eq("home_id", context.homeId);
   return error ? failure(error.message) : success("Tarefa removida.");
+}
+
+export async function createExpense(formData: FormData): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const description = text(formData, "description");
+  const amount = Number(text(formData, "amount").replace(",", "."));
+  if (!description || !Number.isFinite(amount) || amount <= 0) return failure("Informe a descrição e um valor válido.");
+  const { error } = await context.supabase.from("household_expenses").insert({
+    home_id: context.homeId,
+    description,
+    category: text(formData, "category") || "Outros",
+    amount,
+    expense_date: text(formData, "expenseDate") || new Date().toISOString().slice(0, 10),
+    status: text(formData, "status") || "pending",
+    paid_by: optional(formData, "paidBy"),
+    notes: optional(formData, "notes"),
+    created_by: context.userId,
+  });
+  return error ? failure(error.message) : success("Gasto registrado.");
+}
+
+export async function updateExpense(formData: FormData): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const id = text(formData, "id");
+  const description = text(formData, "description");
+  const amount = Number(text(formData, "amount").replace(",", "."));
+  if (!id || !description || !Number.isFinite(amount) || amount <= 0) return failure("Gasto inválido.");
+  const status = text(formData, "status") || "pending";
+  const { error } = await context.supabase.from("household_expenses").update({
+    description,
+    category: text(formData, "category") || "Outros",
+    amount,
+    expense_date: text(formData, "expenseDate"),
+    status,
+    paid_by: status === "paid" ? optional(formData, "paidBy") || context.userId : null,
+    notes: optional(formData, "notes"),
+  }).eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success("Gasto atualizado.");
+}
+
+export async function toggleExpense(id: string, paid: boolean): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const { error } = await context.supabase.from("household_expenses").update({ status: paid ? "paid" : "pending", paid_by: paid ? context.userId : null }).eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success(paid ? "Gasto marcado como pago." : "Gasto marcado como pendente.");
+}
+
+export async function deleteExpense(id: string): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const { error } = await context.supabase.from("household_expenses").delete().eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success("Gasto removido.");
+}
+
+export async function createPlan(formData: FormData): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const title = text(formData, "title");
+  if (!title) return failure("Informe o título do planejamento.");
+  const costText = text(formData, "estimatedCost").replace(",", ".");
+  const { error } = await context.supabase.from("household_plans").insert({
+    home_id: context.homeId,
+    title,
+    description: optional(formData, "description"),
+    plan_type: text(formData, "planType") || "other",
+    status: text(formData, "status") || "planned",
+    target_date: optional(formData, "targetDate"),
+    estimated_cost: costText ? Number(costText) : null,
+    responsible_id: optional(formData, "responsibleId"),
+    created_by: context.userId,
+  });
+  return error ? failure(error.message) : success("Planejamento criado.");
+}
+
+export async function updatePlan(formData: FormData): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const id = text(formData, "id");
+  const title = text(formData, "title");
+  if (!id || !title) return failure("Planejamento inválido.");
+  const costText = text(formData, "estimatedCost").replace(",", ".");
+  const { error } = await context.supabase.from("household_plans").update({
+    title,
+    description: optional(formData, "description"),
+    plan_type: text(formData, "planType") || "other",
+    status: text(formData, "status") || "planned",
+    target_date: optional(formData, "targetDate"),
+    estimated_cost: costText ? Number(costText) : null,
+    responsible_id: optional(formData, "responsibleId"),
+  }).eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success("Planejamento atualizado.");
+}
+
+export async function updatePlanStatus(id: string, status: "planned" | "in_progress" | "completed" | "cancelled"): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const { error } = await context.supabase.from("household_plans").update({ status }).eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success("Andamento atualizado.");
+}
+
+export async function deletePlan(id: string): Promise<ActionResult> {
+  const context = await requireContext();
+  if (!context) return failure("Sessão expirada.");
+  const { error } = await context.supabase.from("household_plans").delete().eq("id", id).eq("home_id", context.homeId);
+  return error ? failure(error.message) : success("Planejamento removido.");
 }
 
 export async function createShoppingItem(formData: FormData): Promise<ActionResult> {
@@ -152,49 +266,6 @@ export async function deleteShoppingItem(id: string): Promise<ActionResult> {
   if (!context) return failure("Sessão expirada.");
   const { error } = await context.supabase.from("shopping_items").delete().eq("id", id).eq("home_id", context.homeId);
   return error ? failure(error.message) : success("Item removido.");
-}
-
-export async function createMission(formData: FormData): Promise<ActionResult> {
-  const context = await requireContext();
-  if (!context) return failure("Sessão expirada.");
-  const name = text(formData, "name");
-  if (!name) return failure("Informe o nome da missão.");
-  const { error } = await context.supabase.from("missions").insert({
-    home_id: context.homeId,
-    name,
-    description: optional(formData, "description"),
-    mission_type: text(formData, "missionType") || "custom",
-    assignment: text(formData, "assignment") || "home",
-    frequency: text(formData, "frequency") || "none",
-    due_at: isoDate(formData, "dueAt"),
-    xp: Math.max(0, Number(text(formData, "xp")) || 50),
-    created_by: context.userId,
-  });
-  return error ? failure(error.message) : success("Missão criada.");
-}
-
-export async function completeMission(id: string): Promise<ActionResult> {
-  const context = await requireContext();
-  if (!context) return failure("Sessão expirada.");
-  const { error } = await context.supabase.from("mission_completions").insert({ mission_id: id, home_id: context.homeId, completed_by: context.userId, xp_awarded: 0 });
-  return error?.code === "23505" ? failure("Esta missão já foi concluída.") : error ? failure(error.message) : success("Missão concluída e XP registrado.");
-}
-
-export async function updateMission(formData: FormData): Promise<ActionResult> {
-  const context = await requireContext();
-  if (!context) return failure("Sessão expirada.");
-  const id = text(formData, "id");
-  const name = text(formData, "name");
-  if (!id || !name) return failure("Missão inválida.");
-  const { error } = await context.supabase.from("missions").update({ name, description: optional(formData, "description"), mission_type: text(formData, "missionType") || "custom", assignment: text(formData, "assignment") || "home", frequency: text(formData, "frequency") || "none", due_at: isoDate(formData, "dueAt"), xp: Math.max(0, Number(text(formData, "xp")) || 50) }).eq("id", id).eq("home_id", context.homeId);
-  return error ? failure(error.message) : success("Missão atualizada.");
-}
-
-export async function deleteMission(id: string): Promise<ActionResult> {
-  const context = await requireContext();
-  if (!context) return failure("Sessão expirada.");
-  const { error } = await context.supabase.from("missions").delete().eq("id", id).eq("home_id", context.homeId);
-  return error ? failure(error.message) : success("Missão removida.");
 }
 
 export async function createAttentionPoint(formData: FormData): Promise<ActionResult> {
